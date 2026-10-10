@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gitaGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FEF3C7" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="#181512" stroke="url(#gitaGold)" stroke-width="2.5"/>
+  <circle cx="50" cy="50" r="38" fill="url(#centerGlow)"/>
+  <!-- Stylized Lotus Petals -->
+  <path d="M50 18 C56 30 65 42 50 64 C35 42 44 30 50 18 Z" fill="url(#gitaGold)" opacity="0.95"/>
+  <path d="M50 64 C38 60 22 52 25 36 C34 36 44 48 50 64 Z" fill="url(#gitaGold)" opacity="0.8"/>
+  <path d="M50 64 C62 60 78 52 75 36 C66 36 56 48 50 64 Z" fill="url(#gitaGold)" opacity="0.8"/>
+  <path d="M50 64 C32 68 18 60 22 48 C30 50 42 56 50 64 Z" fill="url(#gitaGold)" opacity="0.65"/>
+  <path d="M50 64 C68 68 82 60 78 48 C70 50 58 56 50 64 Z" fill="url(#gitaGold)" opacity="0.65"/>
+  <circle cx="50" cy="62" r="4" fill="#FEF3C7"/>
+  <!-- Subtle Om character or sun crest at top -->
+  <path d="M47 75 Q50 72 53 75 Q56 78 50 82 Q44 78 47 75 Z" fill="url(#gitaGold)"/>
+</svg>

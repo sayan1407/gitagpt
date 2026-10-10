@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Cinzel', serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.45);
+}
+
+/* Spiritual Ambient Glow Animation */
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 4s ease-in-out infinite;
+}
+
+/* Markdown typography enhancements */
+.prose-gita {
+  color: inherit;
+  line-height: 1.75;
+}
+
+.prose-gita p {
+  margin-bottom: 0.9rem;
+}
+
+.prose-gita p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-gita strong {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.prose-gita ul, .prose-gita ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.prose-gita li {
+  margin-bottom: 0.35rem;
+}
+
+.prose-gita blockquote {
+  border-left: 3px solid #d97706;
+  padding-left: 1rem;
+  font-style: italic;
+  margin: 0.75rem 0;
+  color: #fbbf24;
+  background: rgba(217, 119, 6, 0.08);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
