@@ -6,9 +6,11 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { InputBox } from './components/InputBox';
 import { ChaptersModal } from './components/ChaptersModal';
 import { SettingsModal } from './components/SettingsModal';
-import type { ChatSession, Message } from './types';
+import { LoginPage } from './components/LoginPage';
+import type { ChatSession, Message, User } from './types';
 import { streamChatMessage, DEFAULT_API_ENDPOINT } from './services/api';
 import { playSereneChime } from './services/sound';
+import { getStoredUser, clearStoredUser } from './services/auth';
 
 const STORAGE_KEY_SESSIONS = 'gitagpt_sessions_v1';
 const STORAGE_KEY_ACTIVE_ID = 'gitagpt_active_session_id_v1';
@@ -82,6 +84,59 @@ export const App: React.FC = () => {
     }
     return 'dark';
   });
+
+  // --- User Authentication & Navigation State ---
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
+  const [currentView, setCurrentView] = useState<'chat' | 'login'>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/login' || window.location.hash === '#login') {
+        return 'login';
+      }
+    }
+    return 'chat';
+  });
+
+  const navigateToLogin = useCallback(() => {
+    setCurrentView('login');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.history.pushState({ view: 'login' }, '', '/login');
+    }
+  }, []);
+
+  const navigateToChat = useCallback(() => {
+    setCurrentView('chat');
+    if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+      window.history.pushState({ view: 'chat' }, '', '/');
+    }
+  }, []);
+
+  const handleLoginSuccess = useCallback((loggedInUser: User) => {
+    setUser(loggedInUser);
+    navigateToChat();
+  }, [navigateToChat]);
+
+  const handleLogout = useCallback(() => {
+    clearStoredUser();
+    setUser(null);
+    setCurrentView('login');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.history.pushState({ view: 'login' }, '', '/login');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== 'undefined') {
+        if (window.location.pathname === '/login' || window.location.hash === '#login') {
+          setCurrentView('login');
+        } else {
+          setCurrentView('chat');
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // --- Runtime UI State ---
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -250,6 +305,11 @@ export const App: React.FC = () => {
 
   // Send message and stream the response
   const handleSendMessage = async (textToSend?: string) => {
+    if (!user) {
+      navigateToLogin();
+      return;
+    }
+
     const messageContent = (textToSend || input).trim();
     if (!messageContent || isStreaming) return;
 
@@ -436,6 +496,17 @@ export const App: React.FC = () => {
     }, 100);
   }, [activeSession.messages, activeSession.id, isStreaming]);
 
+  // Strict authentication guard: if user is not logged in, block all application operations
+  if (!user || currentView === 'login') {
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        onBackToApp={user ? navigateToChat : undefined}
+        theme={theme}
+      />
+    );
+  }
+
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${theme === 'light' ? 'bg-[#fcfaf6] text-[#24211d]' : 'bg-[#0f1115] text-[#ede8df]'}`}>
       {/* Sidebar for chat sessions, chapters, and history */}
@@ -450,6 +521,9 @@ export const App: React.FC = () => {
         onRenameSession={handleRenameSession}
         onClearAll={handleClearAll}
         onOpenChapters={() => setIsChaptersOpen(true)}
+        user={user}
+        onLoginClick={navigateToLogin}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -467,6 +541,9 @@ export const App: React.FC = () => {
           setTheme={setTheme}
           previousResponseId={activeSession.previousResponseId}
           sessionTitle={activeSession.title}
+          user={user}
+          onLoginClick={navigateToLogin}
+          onLogout={handleLogout}
         />
 
         {/* Message Stream or Welcome Screen */}

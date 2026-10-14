@@ -1,3 +1,16 @@
+export interface User {
+  username: string;
+  email: string;
+  isNewUser?: boolean;
+}
+
+export interface GoogleAuthResponse {
+  username: string;
+  email: string;
+  is_new_user?: boolean;
+  message?: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';

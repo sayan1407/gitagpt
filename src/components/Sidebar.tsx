@@ -8,9 +8,12 @@ import {
   X, 
   Quote, 
   Edit3, 
-  Check
+  Check,
+  LogIn,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
-import type { ChatSession } from '../types';
+import type { ChatSession, User } from '../types';
 import { DAILY_SHLOKAS } from '../constants/gitaData';
 
 interface SidebarProps {
@@ -24,6 +27,9 @@ interface SidebarProps {
   onRenameSession: (id: string, newTitle: string) => void;
   onClearAll: () => void;
   onOpenChapters: () => void;
+  user: User | null;
+  onLoginClick: () => void;
+  onLogout: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,6 +43,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onRenameSession,
   onClearAll,
   onOpenChapters,
+  user,
+  onLoginClick,
+  onLogout,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -232,6 +241,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </p>
           </div>
         )}
+
+        {/* User Account Section */}
+        <div className="px-3 pb-2">
+          {user ? (
+            <div className="p-2.5 rounded-xl bg-neutral-900/60 border border-amber-900/20 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 p-[1.5px] flex-shrink-0">
+                  <div className="w-full h-full rounded-full bg-[#181512] flex items-center justify-center text-amber-300 font-bold text-xs">
+                    {user.username ? user.username.charAt(0).toUpperCase() : <UserIcon className="w-3.5 h-3.5" />}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-amber-200 truncate">{user.username}</p>
+                  <p className="text-[10px] text-neutral-400 truncate">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-colors flex-shrink-0"
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onLoginClick}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/20 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-medium transition-all shadow-sm group"
+            >
+              <LogIn className="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+              <span>Sign in with Google</span>
+            </button>
+          )}
+        </div>
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-amber-900/20 flex items-center justify-between text-xs text-neutral-400">

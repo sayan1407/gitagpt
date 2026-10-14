@@ -8,8 +8,12 @@ import {
   // Settings as SettingsIcon,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  LogIn,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
+import type { User } from '../types';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -23,6 +27,9 @@ interface HeaderProps {
   setTheme: (theme: 'dark' | 'light') => void;
   previousResponseId: string | null;
   sessionTitle: string;
+  user: User | null;
+  onLoginClick: () => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,6 +44,9 @@ export const Header: React.FC<HeaderProps> = ({
   setTheme,
   previousResponseId: _previousResponseId,
   sessionTitle,
+  user,
+  onLoginClick,
+  onLogout,
 }) => {
   return (
     <header className="h-14 border-b border-amber-900/20 bg-neutral-900/60 dark:bg-[#121418]/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-3 md:px-5 transition-colors">
@@ -138,15 +148,39 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        {/* Settings */}
-        {/* <button
-          onClick={onOpenSettings}
-          className="p-2 rounded-lg text-amber-200/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
-          title="Backend & Endpoint Settings"
-          aria-label="Settings"
-        >
-          <SettingsIcon className="w-4 h-4" />
-        </button> */}
+        {/* User Authentication Pill / Login Button */}
+        {user ? (
+          <div className="flex items-center gap-1.5 pl-1">
+            <div 
+              className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs shadow-sm"
+              title={`Signed in as ${user.email}`}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 text-neutral-950 font-bold flex items-center justify-center text-[10px]">
+                {user.username ? user.username.charAt(0).toUpperCase() : <UserIcon className="w-3 h-3" />}
+              </div>
+              <span className="hidden md:inline font-medium max-w-[110px] truncate text-amber-200">
+                {user.username}
+              </span>
+            </div>
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-colors"
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onLoginClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 transition-all shadow-sm shadow-amber-500/20 active:scale-95"
+            title="Sign in with Google"
+          >
+            <LogIn className="w-3.5 h-3.5 text-neutral-950" />
+            <span>Sign In</span>
+          </button>
+        )}
       </div>
     </header>
   );
