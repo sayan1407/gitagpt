@@ -1,10 +1,10 @@
 import type { GoogleAuthResponse, User } from '../types';
 
 export const GOOGLE_CLIENT_ID =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  import.meta.env.GOOGLE_CLIENT_ID;
 
 export const DEFAULT_AUTH_CALLBACK_ENDPOINT =
-  import.meta.env.VITE_AUTH_CALLBACK_URL || 'https://gitagptapi.vercel.app/auth/google/callback';
+  import.meta.env.GOOGLE_AUTH_CALLBACK_URL || 'https://gitagptapi.vercel.app/auth/google/callback';
 
 export const PROXY_AUTH_CALLBACK_ENDPOINT = '/auth/google/callback';
 
