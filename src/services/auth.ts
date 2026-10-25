@@ -12,23 +12,24 @@ export const STORAGE_KEY_USER = 'gitagpt_auth_user_v1';
 
 /**
  * Calls the backend to store user info using the Google authorization code.
- * Endpoint: POST https://gitagptapi.vercel.app/auth/google/callback?code=<AUTH_CODE>
+ * Sends authorization code securely in the POST JSON body (preventing query parameter leakage).
  */
 export async function authenticateWithGoogleCode(
   code: string,
   customEndpoint?: string
 ): Promise<GoogleAuthResponse> {
   const baseEndpoint = (customEndpoint?.trim() || DEFAULT_AUTH_CALLBACK_ENDPOINT).trim();
-  const url = `${baseEndpoint}?code=${encodeURIComponent(code)}`;
+  const payload = JSON.stringify({ code });
 
   let response: Response;
 
   try {
-    response = await fetch(url, {
+    response = await fetch(baseEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: payload,
     });
   } catch (err: unknown) {
     // If direct fetch failed due to browser CORS restriction, try local Vite proxy
@@ -40,15 +41,28 @@ export async function authenticateWithGoogleCode(
 
     if (isNetworkOrCorsError) {
       console.warn('Direct fetch failed. Falling back to Vite proxy endpoint:', PROXY_AUTH_CALLBACK_ENDPOINT);
-      const fallbackUrl = `${PROXY_AUTH_CALLBACK_ENDPOINT}?code=${encodeURIComponent(code)}`;
-      response = await fetch(fallbackUrl, {
+      response = await fetch(PROXY_AUTH_CALLBACK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: payload,
       });
     } else {
       throw err;
+    }
+  }
+
+  // Graceful fallback for older endpoints that strictly expect query parameters
+  if (response.status === 405 || response.status === 422) {
+    try {
+      const fallbackUrl = `${baseEndpoint}?code=${encodeURIComponent(code)}`;
+      response = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch {
+      // ignore
     }
   }
 
@@ -64,6 +78,17 @@ export async function authenticateWithGoogleCode(
   }
 
   return response.json();
+}
+
+/**
+ * Returns Authorization header with Bearer token if user is authenticated.
+ */
+export function getAuthHeader(): Record<string, string> {
+  const user = getStoredUser();
+  if (user?.token) {
+    return { Authorization: `Bearer ${user.token}` };
+  }
+  return {};
 }
 
 export function getStoredUser(): User | null {

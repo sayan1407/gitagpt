@@ -1,5 +1,6 @@
 import type { ChatSession, Message } from '../types';
 import { DEFAULT_API_ENDPOINT } from './api';
+import { getAuthHeader } from './auth';
 
 export const PROXY_SESSIONS_ENDPOINT = '/sessions';
 
@@ -30,6 +31,7 @@ export async function fetchUserSessions(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader(),
       },
     });
   } catch (err: unknown) {
@@ -45,6 +47,7 @@ export async function fetchUserSessions(
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
       });
     } else {
@@ -86,6 +89,7 @@ export async function saveSession(
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -101,6 +105,7 @@ export async function saveSession(
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify(payload),
       });
@@ -140,6 +145,7 @@ export async function saveMessage(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -155,6 +161,7 @@ export async function saveMessage(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify(payload),
       });
@@ -194,6 +201,7 @@ export async function updateSessionTitle(
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -209,6 +217,7 @@ export async function updateSessionTitle(
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify(payload),
       });
@@ -239,6 +248,9 @@ export async function deleteSession(
   try {
     response = await fetch(targetUrl, {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeader(),
+      },
     });
   } catch (err: unknown) {
     const isNetworkOrCorsError =
@@ -252,6 +264,9 @@ export async function deleteSession(
         `${PROXY_SESSIONS_ENDPOINT}/${encodeURIComponent(sessionId)}?user_email=${encodeURIComponent(userEmail)}`,
         {
           method: 'DELETE',
+          headers: {
+            ...getAuthHeader(),
+          },
         }
       );
     } else {
@@ -280,6 +295,9 @@ export async function clearAllSessions(
   try {
     response = await fetch(targetUrl, {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeader(),
+      },
     });
   } catch (err: unknown) {
     const isNetworkOrCorsError =
@@ -291,6 +309,9 @@ export async function clearAllSessions(
     if (isNetworkOrCorsError) {
       response = await fetch(`${PROXY_SESSIONS_ENDPOINT}?user_email=${encodeURIComponent(userEmail)}`, {
         method: 'DELETE',
+        headers: {
+          ...getAuthHeader(),
+        },
       });
     } else {
       throw err;
@@ -325,6 +346,7 @@ export async function syncLocalSessionsToDb(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -340,6 +362,7 @@ export async function syncLocalSessionsToDb(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify(payload),
       });

@@ -1,12 +1,16 @@
 export interface User {
   username: string;
   email: string;
+  token?: string;
   isNewUser?: boolean;
 }
 
 export interface GoogleAuthResponse {
   username: string;
   email: string;
+  access_token?: string;
+  token?: string;
+  token_type?: string;
   is_new_user?: boolean;
   message?: string;
 }

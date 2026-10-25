@@ -35,11 +35,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setError(null);
 
     try {
-      // Calls POST https://gitagptapi.vercel.app/auth/google/callback?code=<AUTH_CODE>
+      // Calls POST https://gitagptapi.vercel.app/auth/google/callback with body { code }
       const authData = await authenticateWithGoogleCode(code);
       const user: User = {
         username: authData.username,
         email: authData.email,
+        token: authData.access_token || authData.token,
         isNewUser: authData.is_new_user,
       };
 
