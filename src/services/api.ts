@@ -40,7 +40,7 @@ export async function streamChatMessage({
       signal,
     });
   } catch (err: unknown) {
-    // If direct fetch to 127.0.0.1:8000 failed due to browser CORS restriction, try local Vite proxy
+    // If direct fetch failed due to browser CORS restriction, try local Vite proxy
     const isNetworkOrCorsError = err instanceof TypeError && (
       targetUrl === DEFAULT_API_ENDPOINT || targetUrl.includes('127.0.0.1:8000') || targetUrl.includes('localhost:8000') || targetUrl.includes('gitagptapi.vercel.app')
     );

@@ -31,10 +31,12 @@ export async function authenticateWithGoogleCode(
       },
     });
   } catch (err: unknown) {
-    // If direct fetch to 127.0.0.1:8000 failed due to browser CORS restriction, try local Vite proxy
+    // If direct fetch failed due to browser CORS restriction, try local Vite proxy
     const isNetworkOrCorsError =
       err instanceof TypeError &&
-      (baseEndpoint.includes('127.0.0.1:8000') || baseEndpoint.includes('localhost:8000'));
+      (baseEndpoint.includes('127.0.0.1:8000') ||
+        baseEndpoint.includes('localhost:8000') ||
+        baseEndpoint.includes('gitagptapi.vercel.app'));
 
     if (isNetworkOrCorsError) {
       console.warn('Direct fetch failed. Falling back to Vite proxy endpoint:', PROXY_AUTH_CALLBACK_ENDPOINT);

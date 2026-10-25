@@ -11,7 +11,8 @@ import {
   Check,
   LogIn,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Loader2
 } from 'lucide-react';
 import type { ChatSession, User } from '../types';
 import { DAILY_SHLOKAS } from '../constants/gitaData';
@@ -30,6 +31,7 @@ interface SidebarProps {
   user: User | null;
   onLoginClick: () => void;
   onLogout: () => void;
+  isLoadingSessions?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   user,
   onLoginClick,
   onLogout,
+  isLoadingSessions = false,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -147,7 +150,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </div>
 
-          {sessions.length === 0 ? (
+          {isLoadingSessions ? (
+            <div className="flex flex-col items-center justify-center py-8 text-neutral-400 gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
+              <span className="text-xs text-neutral-400">Loading reflections from database...</span>
+            </div>
+          ) : sessions.length === 0 ? (
             <div className="text-center py-8 px-4 text-neutral-400 text-xs">
               <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-30 text-amber-400" />
               <p>No previous conversations.</p>

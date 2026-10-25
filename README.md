@@ -40,7 +40,7 @@ An AI chatbot application crafted with **React**, **TypeScript**, and **Tailwind
 ## 🛠️ API Specification
 
 ### Endpoint
-- Default: `http://127.0.0.1:8000/chat`
+- Default: `https://gitagptapi.vercel.app/chat`
 - Fallback / Proxy: `/api-chat` (seamlessly configured in `vite.config.ts` to prevent browser CORS blockages)
 
 ### Request Payload
@@ -67,7 +67,7 @@ response_id: resp_067cd2be5fc01a02006abc9fddbc9c87d09cc5b6d9e46a21c2
 ### 1. Prerequisites
 - **Node.js** (v20+)
 - **npm** (v10+)
-- The GitaGPT backend service running at `http://127.0.0.1:8000/chat`
+- The GitaGPT backend service running at `https://gitagptapi.vercel.app/chat`
 
 ### 2. Run the Development Server
 ```bash

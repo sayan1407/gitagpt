@@ -35,7 +35,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setError(null);
 
     try {
-      // Calls POST http://127.0.0.1:8000/auth/google/callback?code=<AUTH_CODE>
+      // Calls POST https://gitagptapi.vercel.app/auth/google/callback?code=<AUTH_CODE>
       const authData = await authenticateWithGoogleCode(code);
       const user: User = {
         username: authData.username,

@@ -11,6 +11,14 @@ import type { ChatSession, Message, User } from './types';
 import { streamChatMessage, DEFAULT_API_ENDPOINT } from './services/api';
 import { playSereneChime } from './services/sound';
 import { getStoredUser, clearStoredUser } from './services/auth';
+import {
+  fetchUserSessions,
+  saveSession,
+  updateSessionTitle,
+  deleteSession,
+  clearAllSessions,
+  syncLocalSessionsToDb,
+} from './services/chatHistory';
 
 const STORAGE_KEY_SESSIONS = 'gitagpt_sessions_v1';
 const STORAGE_KEY_ACTIVE_ID = 'gitagpt_active_session_id_v1';
@@ -118,6 +126,9 @@ export const App: React.FC = () => {
   const handleLogout = useCallback(() => {
     clearStoredUser();
     setUser(null);
+    const fresh = createNewSession();
+    setSessions([fresh]);
+    setActiveSessionId(fresh.id);
     setCurrentView('login');
     if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
       window.history.pushState({ view: 'login' }, '', '/login');
@@ -148,17 +159,80 @@ export const App: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Derive active session
+  // Active session derived from database-backed sessions
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0] || createNewSession();
 
-  // Save sessions to localStorage
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  // Load chat sessions from Neon database for the authenticated user
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
-    } catch (e) {
-      console.error('Failed to save sessions to localStorage', e);
-    }
-  }, [sessions]);
+    if (!user?.email) return;
+
+    let isMounted = true;
+    setIsLoadingSessions(true);
+
+    fetchUserSessions(user.email, apiEndpoint)
+      .then(async (dbSessions) => {
+        if (!isMounted) return;
+
+        if (dbSessions && dbSessions.length > 0) {
+          setSessions(dbSessions);
+          setActiveSessionId((prevActive) => {
+            const exists = dbSessions.some((s) => s.id === prevActive);
+            return exists ? prevActive : dbSessions[0].id;
+          });
+          // Clear legacy localStorage sessions now that the database holds the history
+          try {
+            localStorage.removeItem(STORAGE_KEY_SESSIONS);
+          } catch {
+            // ignore
+          }
+        } else {
+          // If database is empty, check if legacy localStorage sessions exist to migrate
+          try {
+            const saved = localStorage.getItem(STORAGE_KEY_SESSIONS);
+            if (saved) {
+              const parsed: ChatSession[] = JSON.parse(saved);
+              const meaningfulSessions = parsed.filter(
+                (s) => s.messages && s.messages.length > 0
+              );
+              if (meaningfulSessions.length > 0) {
+                console.log('Migrating localStorage chat history to database...');
+                const migrated = await syncLocalSessionsToDb(
+                  user.email,
+                  meaningfulSessions,
+                  apiEndpoint
+                );
+                if (isMounted && migrated && migrated.length > 0) {
+                  setSessions(migrated);
+                  setActiveSessionId(migrated[0].id);
+                  localStorage.removeItem(STORAGE_KEY_SESSIONS);
+                  return;
+                }
+              }
+            }
+          } catch (migrErr) {
+            console.error('Failed migrating local sessions to database:', migrErr);
+          }
+
+          if (isMounted) {
+            const fresh = createNewSession();
+            setSessions([fresh]);
+            setActiveSessionId(fresh.id);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load chat sessions from database:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingSessions(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.email, apiEndpoint]);
 
   // Save active session ID to localStorage
   useEffect(() => {
@@ -256,12 +330,24 @@ export const App: React.FC = () => {
       }
       return filtered;
     });
-  }, [activeSessionId]);
+
+    if (user?.email) {
+      deleteSession(user.email, id, apiEndpoint).catch(err => {
+        console.error('Failed to delete session from database:', err);
+      });
+    }
+  }, [activeSessionId, user?.email, apiEndpoint]);
 
   // Rename a chat session
   const handleRenameSession = useCallback((id: string, newTitle: string) => {
     setSessions(prev => prev.map(s => s.id === id ? { ...s, title: newTitle } : s));
-  }, []);
+
+    if (user?.email) {
+      updateSessionTitle(user.email, id, newTitle, apiEndpoint).catch(err => {
+        console.error('Failed to update session title in database:', err);
+      });
+    }
+  }, [user?.email, apiEndpoint]);
 
   // Clear all chats
   const handleClearAll = useCallback(() => {
@@ -272,7 +358,13 @@ export const App: React.FC = () => {
     const fresh = createNewSession();
     setSessions([fresh]);
     setActiveSessionId(fresh.id);
-  }, [isStreaming]);
+
+    if (user?.email) {
+      clearAllSessions(user.email, apiEndpoint).catch(err => {
+        console.error('Failed to clear sessions in database:', err);
+      });
+    }
+  }, [isStreaming, user?.email, apiEndpoint]);
 
   // Reset context ID to null in the active session
   const handleResetResponseId = useCallback(() => {
@@ -407,28 +499,42 @@ export const App: React.FC = () => {
         customEndpoint: apiEndpoint,
       });
 
-      // Complete message state
-      setSessions(prev => prev.map(s => {
-        if (s.id === activeSession.id) {
-          const finalId = capturedResponseId || result.responseId || s.previousResponseId;
-          return {
-            ...s,
-            previousResponseId: finalId,
-            messages: s.messages.map(m => {
-              if (m.id === assistantMessageId) {
-                return {
-                  ...m,
-                  content: result.fullContent || accumulatedContent,
-                  responseId: finalId || undefined,
-                  isStreaming: false,
-                };
-              }
-              return m;
-            }),
-          };
+      // Complete message state and persist to Neon database
+      setSessions(prev => {
+        let sessionToPersist: ChatSession | null = null;
+        const updated = prev.map(s => {
+          if (s.id === activeSession.id) {
+            const finalId = capturedResponseId || result.responseId || s.previousResponseId;
+            const updatedSession: ChatSession = {
+              ...s,
+              previousResponseId: finalId,
+              updatedAt: Date.now(),
+              messages: s.messages.map(m => {
+                if (m.id === assistantMessageId) {
+                  return {
+                    ...m,
+                    content: result.fullContent || accumulatedContent,
+                    responseId: finalId || undefined,
+                    isStreaming: false,
+                  };
+                }
+                return m;
+              }),
+            };
+            sessionToPersist = updatedSession;
+            return updatedSession;
+          }
+          return s;
+        });
+
+        if (sessionToPersist && user?.email) {
+          saveSession(user.email, sessionToPersist, apiEndpoint).catch(err => {
+            console.error('Failed to save chat session to database:', err);
+          });
         }
-        return s;
-      }));
+
+        return updated;
+      });
 
       // Play peaceful chime if sound is enabled
       if (soundEnabled) {
@@ -442,25 +548,39 @@ export const App: React.FC = () => {
         console.error('Error during chat stream:', err);
         const errorMessage = err instanceof Error ? err.message : 'Unable to connect to GitaGPT service.';
 
-        setSessions(prev => prev.map(s => {
-          if (s.id === activeSession.id) {
-            return {
-              ...s,
-              messages: s.messages.map(m => {
-                if (m.id === assistantMessageId) {
-                  return {
-                    ...m,
-                    content: `Could not retrieve wisdom: ${errorMessage}. Please check your backend connection at ${apiEndpoint}.`,
-                    isStreaming: false,
-                    error: true,
-                  };
-                }
-                return m;
-              }),
-            };
+        setSessions(prev => {
+          let errorSessionToPersist: ChatSession | null = null;
+          const updated = prev.map(s => {
+            if (s.id === activeSession.id) {
+              const updatedSession: ChatSession = {
+                ...s,
+                updatedAt: Date.now(),
+                messages: s.messages.map(m => {
+                  if (m.id === assistantMessageId) {
+                    return {
+                      ...m,
+                      content: `Could not retrieve wisdom: ${errorMessage}. Please check your backend connection at ${apiEndpoint}.`,
+                      isStreaming: false,
+                      error: true,
+                    };
+                  }
+                  return m;
+                }),
+              };
+              errorSessionToPersist = updatedSession;
+              return updatedSession;
+            }
+            return s;
+          });
+
+          if (errorSessionToPersist && user?.email) {
+            saveSession(user.email, errorSessionToPersist, apiEndpoint).catch(dbErr => {
+              console.error('Failed to save session error to database:', dbErr);
+            });
           }
-          return s;
-        }));
+
+          return updated;
+        });
       }
     } finally {
       setIsStreaming(false);
@@ -524,6 +644,7 @@ export const App: React.FC = () => {
         user={user}
         onLoginClick={navigateToLogin}
         onLogout={handleLogout}
+        isLoadingSessions={isLoadingSessions}
       />
 
       {/* Main Content Area */}

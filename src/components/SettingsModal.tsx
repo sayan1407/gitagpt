@@ -48,7 +48,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         signal: controller.signal,
       }).catch(async (directErr) => {
         // Fallback test via proxy
-        if (target === DEFAULT_API_ENDPOINT || target.includes('127.0.0.1:8000')) {
+        if (target === DEFAULT_API_ENDPOINT || target.includes('127.0.0.1:8000') || target.includes('gitagptapi.vercel.app')) {
           return await fetch('/api-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const errMsg = err instanceof Error ? err.message : String(err);
       setTestResult({
         success: false,
-        message: `Connection failed: ${errMsg}. Ensure http://127.0.0.1:8000/chat is running.`,
+        message: `Connection failed: ${errMsg}. Ensure https://gitagptapi.vercel.app/chat is running.`,
       });
     } finally {
       setTesting(false);
@@ -125,7 +125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="text"
               value={tempEndpoint}
               onChange={(e) => setTempEndpoint(e.target.value)}
-              placeholder="http://127.0.0.1:8000/chat"
+              placeholder="https://gitagptapi.vercel.app/chat"
               className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono text-xs focus:outline-none focus:border-amber-500"
             />
             <p className="text-[11px] text-neutral-400">

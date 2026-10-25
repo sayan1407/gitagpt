@@ -11,14 +11,18 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy /api-chat to local backend to circumvent browser CORS restrictions if needed
+      // Proxy /api-chat to backend to circumvent browser CORS restrictions if needed
       '/api-chat': {
-        target: 'http://127.0.0.1:8000',
+        target: 'https://gitagptapi.vercel.app',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-chat/, '/chat'),
       },
       '/auth': {
-        target: 'http://127.0.0.1:8000',
+        target: 'https://gitagptapi.vercel.app',
+        changeOrigin: true,
+      },
+      '/sessions': {
+        target: 'https://gitagptapi.vercel.app',
         changeOrigin: true,
       },
     },
